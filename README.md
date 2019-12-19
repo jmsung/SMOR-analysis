@@ -1,2 +1,2 @@
-# lb-analysis
-Single molecule analysis of fluorescent ligand binding 
+# smb-analysis
+Single molecule binding analysis 
