@@ -35,7 +35,11 @@ These steps will install smb-analysis and its dependencies in a conda environmen
 
 
 ## Instruction
-This is instruction about how to use this tool. 
+1. Change the working directory to where data is located. All the data under the directory will be automatically analyzed.     
+`(smb) $ cd /your_data_directory` 
+
+2. Run the smb-analysis code.   
+`(smb) $ smb-analysis`
 
 
 ## Notes:
