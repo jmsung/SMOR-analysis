@@ -1,0 +1,7 @@
+*.pyc
+*.tif
+*.png
+*.tiff
+build/
+dist/
+smb_analysis.egg-info/

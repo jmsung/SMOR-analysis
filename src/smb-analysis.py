@@ -30,16 +30,18 @@ from skimage.feature import peak_local_max
 from skimage.filters import threshold_local
 from sklearn.mixture import GaussianMixture 
 from hmmlearn import hmm
+from hmmlearn.base import _BaseHMM
 from inspect import currentframe, getframeinfo
 fname = getframeinfo(currentframe()).filename # current file name
-current_dir = Path(fname).resolve().parent
+#current_dir = Path(fname).resolve().parent
+data_directory = Path.cwd()
 
 # User input ----------------------------------------------------------------
 
-print('test')
 
 # Jongmin PC
-data_directory = current_dir.parent/'data'#/'Batch Analysis run'#19-08-28 Run with apc_analysis_27Aug19'#/'antistrep_APC-Cdh1_NHP2&9_50frames_10s_1 X'
+#data_directory = current_dir#.parent/'data'#/'Batch Analysis run'#19-08-28 Run with apc_analysis_27Aug19'#/'antistrep_APC-Cdh1_NHP2&9_50frames_10s_1 X'
+print(data_directory)
 
 # Trap PC
 #data_directory = current_dir.parent/'Batch Analysis run with 4Oct2019 code (no Henrik math)'
@@ -505,6 +507,14 @@ class Movie:
         self.rmsd = np.zeros(self.n_spot)
         self.I_u = np.zeros(self.n_spot)
         self.I_b = np.zeros(self.n_spot)
+
+        old_check = _BaseHMM._check
+        def new_check(self):
+            try:
+                old_check(self)
+            except ValueError:
+                pass
+        _BaseHMM._check = new_check
 
         # Fit the time trace using HMM    
         for i, trace in enumerate(self.trace):
