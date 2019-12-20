@@ -698,6 +698,7 @@ class Movie:
 
 
     def save_result(self):
+
         # Write the result to an output file
         with open(Path(self.dir/'result.txt'), "w") as f:
             f.write('directory = %s \n' %(self.dir))
@@ -718,6 +719,11 @@ class Movie:
 
             f.write('dwell time (class 2, exp_pdf) = %.3f +/- %.3f [s] (N = %d) \n' %(self.dwell_pdf, self.dwell_pdf_error, len(self.dwell_2)))  
             f.write('dwell time (class 2, exp_icdf) = %.3f [s] (N = %d) \n\n' %(self.dwell_icdf, len(self.dwell_2)))  
+
+        # Delete error.txt if existing 
+        error_file = Path(self.dir/'error.txt')
+        if error_file.exists():
+            os.remove(error_file)
 
       
     def plot0_clean(self):
