@@ -56,3 +56,8 @@ These steps will install smb-analysis and its dependencies in a conda environmen
 
 ## Notes:
 * Notes and comments come here. 
+
+
+## Reference:
+Refer this paper.   
+Hartooni et al. (2020). 
