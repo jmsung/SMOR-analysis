@@ -35,10 +35,22 @@ These steps will install smb-analysis and its dependencies in a conda environmen
 
 
 ## Instruction
-1. Change the working directory to where data is located. All the data under the directory will be automatically analyzed.     
+1. Organize your data directory tree in the followng manner.     
+
+	- data folder
+		- data1
+			- movie1.tif
+			- info.txt
+		- data2
+			- movie2.tif
+			- info.txt
+		
+2. Edit the parameters in info.txt for the the specific data in the same folder. Check the info.txt in data/example/ as an example. 
+
+3. Change the working directory to where your data is located. All the data under the directory tree will be automatically analyzed.     
 `(smb) $ cd /your_data_directory` 
 
-2. Run the smb-analysis code.   
+4. Run the smb-analysis code.   
 `(smb) $ smb-analysis`
 
 
