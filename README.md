@@ -51,7 +51,7 @@ These steps will install smb-analysis and its dependencies in a conda environmen
 `(smb) $ cd /your_data_directory` 
 
 4. Run the smb-analysis code.   
-`(smb) $ smb-analysis`
+`(smb) $ smb-analysis.py`
 
 
 ## Notes:
