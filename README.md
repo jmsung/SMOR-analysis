@@ -45,7 +45,7 @@ These steps will install smb-analysis and its dependencies in a conda environmen
 			- movie2.tif
 			- info.txt
 		
-2. Edit the parameters in info.txt for the the specific data in the same folder. Check the info.txt in data/example/ as an example. 
+2. Edit the parameters in the info.txt for each data in the same folder. Check the info.txt in data/example/ as an example. 
 
 3. Change the working directory to where your data is located. All the data under the directory tree will be automatically analyzed.     
 `(smb) $ cd /your_data_directory` 
