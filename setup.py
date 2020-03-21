@@ -23,7 +23,7 @@ setup(
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'smb = smb_analysis.smb:main',
+            'smb_analysis = smb_analysis.smb_analysis:main',
             ]
     }
 )
