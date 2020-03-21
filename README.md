@@ -25,7 +25,7 @@ These steps will install smb-analysis and its dependencies in a conda environmen
 `(smb) $ conda install git`
 
 6. Clone this repository.   
-`(smb) $ git clone https://github.com/jmsung/smb-analysis`
+`(smb) $ git clone git@github.com:jmsung/smb-analysis.git`
 
 7. Move to the folder.  
 `(smb) $ cd smb-analysis`   
