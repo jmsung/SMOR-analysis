@@ -2,3 +2,4 @@ build/
 dist/
 smb_analysis.egg-info/
 data/
+*.pyc

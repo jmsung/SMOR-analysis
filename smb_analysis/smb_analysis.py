@@ -8,8 +8,6 @@ anchored on the surface at fixed positions. This code cannot properly analyze th
 moves in space over time. One exception is the global sample drift that needs to be corrected for the proper analysis.
 
 
-   
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 
@@ -239,7 +237,7 @@ class Movie:
         self.n_frame = np.size(imagej_hyperstack, 0)
         self.window = self.n_frame*self.time_interval
 
-        # Crop the image to make the size integer multiple of 10
+        # Crop the image to make the size integer multiple of 20
         self.bin_size = 20
         n_row = np.size(imagej_hyperstack, 1)
         self.n_row = int(int(n_row/self.bin_size)*self.bin_size)        
@@ -707,34 +705,33 @@ class Movie:
             f.write('number of frame = %d \n' %(self.n_frame))
             f.write('number of spots = %d \n\n' %(len(self.rmsd_inlier)))
 
-            f.write('dwell time (class 1) = %.3f +/- %.3f [s] (N = %d) \n' %(self.Mean_dwell_1, self.Error_dwell_1, len(self.dwell_1)))
             f.write('dwell time (class 2) = %.3f +/- %.3f [s] (N = %d) \n' %(self.Mean_dwell_2, self.Error_dwell_2, len(self.dwell_2)))
-            f.write('dwell time (class 3) = %.3f +/- %.3f [s] (N = %d) \n' %(self.Mean_dwell_3, self.Error_dwell_3, len(self.dwell_3)))
-            f.write('dwell time (combined) = %.3f +/- %.3f [s] (N = %d) \n\n' %(self.Mean_dwell, self.Error_dwell, len(self.dwell_1)+len(self.dwell_2)+len(self.dwell_3)))
-
-            f.write('wait time (class 1) = %.3f +/- %.3f [s] (N = %d) \n' %(self.Mean_wait_1, self.Error_wait_1, len(self.wait_1)))
-            f.write('wait time (class 2) = %.3f +/- %.3f [s] (N = %d) \n' %(self.Mean_wait_2, self.Error_wait_2, len(self.wait_2)))
-            f.write('wait time (class 3) = %.3f +/- %.3f [s] (N = %d) \n' %(self.Mean_wait_3, self.Error_wait_3, len(self.wait_3)))
-            f.write('wait time (combined) = %.3f +/- %.3f [s] (N = %d) \n\n' %(self.Mean_wait, self.Error_wait, len(self.wait_1)+len(self.wait_2)+len(self.wait_3)))
 
             f.write('dwell time (class 2, exp_pdf) = %.3f +/- %.3f [s] (N = %d) \n' %(self.dwell_pdf, self.dwell_pdf_error, len(self.dwell_2)))  
             f.write('dwell time (class 2, exp_icdf) = %.3f [s] (N = %d) \n\n' %(self.dwell_icdf, len(self.dwell_2)))  
 
-        # Delete error.txt if existing 
-        error_file = Path(self.dir/'error.txt')
-        if error_file.exists():
-            os.remove(error_file)
-
       
-    def plot0_clean(self):
-        # clean all existing png files in the folder
+    def figure_reset(self):       
+
+        # clean all the existing png files in the folder
         files = os.listdir(self.dir)    
         for file in files:
             if file.endswith('png'):
-                os.remove(self.dir/file)    
+                os.remove(self.dir/file) 
+
+        if os.path.exists(self.dir/'Traces'): # Delete if already existing 
+            shutil.rmtree(self.dir/'Traces')
 
 
-    def plot1_original_min_max(self):
+        # make folders to save figures                                                                                                                                                                                                                                                                         
+        path = self.dir/'figures'
+        if os.path.exists(path): # Delete if already existing 
+            shutil.rmtree(path)
+        os.makedirs(path)
+        os.makedirs(path/'traces')
+
+
+    def figure1_projected_intensity(self):
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(figsize=(20, 10), ncols=2, nrows=2, dpi=300)
 
         I_min = np.min(self.I_original, axis=0)
@@ -742,30 +739,32 @@ class Movie:
 
         sp = ax1.imshow(I_min, cmap='gray')
         fig.colorbar(sp, ax=ax1) 
+        ax1.set_title('Projected Min Intensity')
 
         ax2.hist(I_min.ravel(), 20, histtype='step', lw=2, color='k')    
         ax2.set_yscale('log')
         ax2.set_xlim(0, np.max(I_max)) 
         ax2.set_xlabel('Intensity')
         ax2.set_ylabel('Counts')
-        ax2.set_title('Min projection - original')
+        ax2.set_title('Histogram of Projected Min Intensity')
 
         sp = ax3.imshow(I_max, cmap='gray')
         fig.colorbar(sp, ax=ax3) 
+        ax3.set_title('Projected Max Intensity')
 
         ax4.hist(I_max.ravel(), 50, histtype='step', lw=2, color='k')                      
         ax4.set_yscale('log')
         ax4.set_xlim(0, np.max(I_max)) 
         ax4.set_xlabel('Intensity')
         ax4.set_ylabel('Counts')
-        ax4.set_title('Max projection - original')
+        ax4.set_title('Histogram of Projected Max Intensity')
 
         fig.tight_layout()
-        fig.savefig(self.dir/'plot1_original_min_max.png')   
+        fig.savefig(self.dir/'figures'/'figure1_projected_intensity.png')   
         plt.close('all')                                                                                                                                                                                                                                                                                                                                                                                                                                                            
 
 
-    def plot2_flatfield(self):              
+    def figure2_flatfield(self):              
         if str2bool(self.info['flatfield_correct']) == False:
             return None
 
@@ -773,91 +772,89 @@ class Movie:
 
         sp = ax1.imshow(self.I_offset_max, cmap=cm.gray)
         fig.colorbar(sp, ax=ax1) 
-        ax1.set_title('Max intensity - original')      
+        ax1.set_title('Projected Max Intensity - Original')      
   
         ax2.imshow(self.mask, cmap=cm.gray)
         ax2.set_title('Mask')           
 
         sp = ax3.imshow(self.I_bin, cmap=cm.gray)
         fig.colorbar(sp, ax=ax3) 
-        ax3.set_title('Intensity - bin')
+        ax3.set_title('Intensity - Bin')
 
         sp = ax4.imshow(self.I_bin_filter, cmap=cm.gray)
         fig.colorbar(sp, ax=ax4) 
-        ax4.set_title('Intensity - bin filter')        
+        ax4.set_title('Intensity - Bin Filter')        
 
         sp = ax5.imshow(self.I_max, cmap=cm.gray)
         fig.colorbar(sp, ax=ax5) 
-        ax5.set_title('Max intensity - flatfield')
+        ax5.set_title('Projected Max Intensity - Flatfield')
 
         sp = ax6.imshow(self.I_flatfield_bin, cmap=cm.gray)
         fig.colorbar(sp, ax=ax6) 
-        ax6.set_title('Intensity flatfield - bin')
+        ax6.set_title('Intensity Flatfield - Bin')
 
         fig.tight_layout()
-        fig.savefig(self.dir/'plot2_flatfield.png')   
+        fig.savefig(self.dir/'figures'/'figure2_flatfield.png')   
         plt.close('all')
 
 
-    def plot3_drift(self):                      
+    def figure3_drift(self):                      
         I_row = np.squeeze(self.I[:,int(self.n_row/2),:])
         I_col = np.squeeze(self.I[:,:,int(self.n_col/2)])
 
         fig, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(figsize=(20, 10), ncols=2, nrows=3, dpi=300)
 
-        ax1.plot(self.drift_row, 'k')
-        ax1.set_yticks(np.arange(min(self.drift_row), max(self.drift_row)+1, 1.0))
+        ax1.plot(self.drift_col, 'k')
+        ax1.set_yticks(np.arange(min(self.drift_col), max(self.drift_col)+1, 1.0))
         ax1.set_xlabel('Frame')
         ax1.set_ylabel('Pixel')
-        ax1.set_title('Drift in Y')
+        ax1.set_title('Drift in X')
 
-        ax2.plot(self.drift_col, 'k')
-        ax2.set_yticks(np.arange(min(self.drift_col), max(self.drift_col)+1, 1.0))
+        ax2.plot(self.drift_row, 'k')
+        ax2.set_yticks(np.arange(min(self.drift_row), max(self.drift_row)+1, 1.0))
         ax2.set_xlabel('Frame')
         ax2.set_ylabel('Pixel')
-        ax2.set_title('Drift in X')
+        ax2.set_title('Drift in Y')
 
-        ax3.imshow(I_col, cmap='gray')
-        ax3.set_xlabel('Y')
+        ax3.imshow(I_row, cmap='gray')
+        ax3.set_xlabel('X')
         ax3.set_ylabel('Frame')
 
-        ax4.imshow(I_row, cmap='gray')
-        ax4.set_xlabel('X')
+        ax4.imshow(I_col, cmap='gray')
+        ax4.set_xlabel('Y')
         ax4.set_ylabel('Frame')
 
-        ax5.plot(np.mean(I_col, axis=0), 'ko-')
-        ax5.set_xlim([0, self.n_col])
-        ax5.set_xlabel('Y')
+        ax5.plot(np.mean(I_row, axis=0), 'ko-')
+        ax5.set_xlim([0, self.n_row])
+        ax5.set_xlabel('X')
 
-        ax6.plot(np.mean(I_row, axis=0), 'ko-')
-        ax6.set_xlim([0, self.n_row])
-        ax6.set_xlabel('X')
+        ax6.plot(np.mean(I_col, axis=0), 'ko-')
+        ax6.set_xlim([0, self.n_col])
+        ax6.set_xlabel('Y')
 
         fig.tight_layout()
-        fig.savefig(self.dir/'plot3_drift.png')   
+        fig.savefig(self.dir/'figures'/'figure3_drift.png')   
         plt.close('all')
 
-    def plot4_peak(self):
+
+    def figure4_peak(self):
         fig = plt.figure(figsize=(20, 10), dpi=300)
 
-        fig, (ax1, ax2, ax3) = plt.subplots(figsize=(20, 10), ncols=3, nrows=1, dpi=300)
+        fig, (ax1, ax2) = plt.subplots(figsize=(20, 10), ncols=2, nrows=1, dpi=300)
 
         ax1.imshow(self.I_max, cmap=cm.gray)
-        ax1.set_title('Max intensity')   
+        ax1.set_title('Projected Max Intensity - Flatfield')   
 
         ax2.imshow(self.I_max_smooth, cmap=cm.gray)
-        ax2.set_title('Max intensity - smooth') 
-
-        ax3.imshow(self.I_max_smooth, cmap=cm.gray)
-        ax3.scatter(self.peak_col, self.peak_row, lw=0.8, s=50, facecolors='none', edgecolors='y')
-        ax3.set_title('Peaks') 
+        ax2.scatter(self.peak_col, self.peak_row, lw=0.8, s=50, facecolors='none', edgecolors='y')
+        ax2.set_title('Peaks') 
 
         fig.tight_layout()
-        fig.savefig(self.dir/'plot4_peak.png')   
+        fig.savefig(self.dir/'figures'/'figure4_peak.png')   
         plt.close('all')
 
 
-    def plot5_spot(self):
+    def figure5_spot(self):
         fig = plt.figure(figsize=(20, 10), dpi=300)
         gs = fig.add_gridspec(2, 2)
 
@@ -867,7 +864,7 @@ class Movie:
         ax1.scatter(self.peak_col, self.peak_row, lw=0.8, s=50, facecolors='none', edgecolors=color)
         ax1.set_xlabel('X')
         ax1.set_ylabel('Y')        
-        ax1.set_title('Spots: selected (R), rejected (B)')  
+        ax1.set_title('Peaks: selected (R), rejected (B)')  
 
         bins = np.linspace(min(self.peak_min), max(self.peak_min), 50)     
         ax2 = fig.add_subplot(gs[0, 1])
@@ -875,7 +872,9 @@ class Movie:
         ax2.hist(self.peak_min[self.is_peak_min_inlier], bins = bins, histtype='step', lw=2, color='r')   
         ax2.set_xlabel('Intensity')
         ax2.set_ylabel('Counts')     
-        ax2.set_title('Intensity min')
+        ax2.set_title('Minimum intensity (cutoff=%.1f SD)' %(float(self.info['intensity_min_cutoff'])))
+
+
 
         bins = np.linspace(min(self.peak_max), max(self.peak_max), 50)     
         ax3 = fig.add_subplot(gs[1, 1])
@@ -884,13 +883,13 @@ class Movie:
 #        ax3.plot(self.I_max_x, self.I_max_fit, 'k')
         ax3.set_xlabel('Intensity')
         ax3.set_ylabel('Counts')    
-        ax3.set_title('Intensity max')
+        ax3.set_title('Maximum intensity (cutoff=%.1f SD)' %(float(self.info['intensity_max_cutoff'])))
 
-        fig.savefig(self.dir/'plot5_spot.png')   
+        fig.savefig(self.dir/'figures'/'figure5_spot.png')   
         plt.close('all')
 
 
-    def plot6_spot_fit(self):
+    def figure6_spot_fit(self):
         spot_trace = self.trace.flatten()
         n, bins = np.histogram(self.trace.flatten(), bins=100, density=False)
         x = (bins[1:]+bins[:-1])/2
@@ -900,39 +899,38 @@ class Movie:
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(figsize=(20, 10), ncols=2, nrows=2, dpi=300)     
  
         ax1.step(x, n, where='mid', c='k', lw=2)
-#        ax1.scatter(self.I_x[is_max], self.I_hist[is_max], lw=2, s=100, facecolors='none', edgecolors='r')
         ax1.plot(x_fit, y_fit, 'r')    
         ax1.set_yscale('log')      
         ax1.set_xlabel('Intensity')
         ax1.set_ylabel('Counts')
-        ax1.set_title('Intensity of entire traces')   
+        ax1.set_title('Histogram of Intensities Along the Entire Trace of All Selected Spots')   
 
         bins = np.linspace(min(self.rmsd), max(self.rmsd), 50)          
         ax2.hist(self.rmsd, bins = bins, histtype='step', lw=2, color='b')   
         ax2.hist(self.rmsd[self.is_rmsd_inlier], bins = bins, histtype='step', lw=2, color='r')   
-        ax2.set_title('RMSD of fitting (HMM)')
+        ax2.set_title('Histogram of RMSD Values for All Trace (cutoff=%.1f SD)' %(float(self.info['HMM_RMSD_cutoff'])))
         ax2.set_xlabel('RMSD')
         ax2.set_ylabel('Counts')
 
         bins = np.linspace(min(self.I_u), max(self.I_u), 50)  
         ax3.hist(self.I_u, bins = bins, histtype='step', lw=2, color='b')      
         ax3.hist(self.I_u[self.is_I_u_inlier], bins = bins, histtype='step', lw=2, color='r')    
-        ax3.set_title('Intensity unbound (HMM)')
+        ax3.set_title('Histogram of Unbound Intensity from HMM Fit (cutoff=%.1f SD)' %(float(self.info['HMM_unbound_cutoff'])))
         ax3.set_xlabel('Intensity')
         ax3.set_ylabel('Counts')
  
         bins = np.linspace(min(self.I_b), max(self.I_b), 50)  
         ax4.hist(self.I_b, bins = bins, histtype='step', lw=2, color='b')      
         ax4.hist(self.I_b[self.is_I_b_inlier], bins = bins, histtype='step', lw=2, color='r')      
-        ax4.set_title('Intensity bound (HMM)')
+        ax4.set_title('Histogram of Bound Intensity from HMM Fit (cutoff=%.1f SD)' %(float(self.info['HMM_bound_cutoff'])))
         ax4.set_xlabel('Intensity')
         ax4.set_ylabel('Counts')
 
-        fig.savefig(self.dir/'plot6_spot_fit.png')   
+        fig.savefig(self.dir/'figures'/'figure6_spot_fit.png')   
         plt.close('all')
 
 
-    def plot7_dwell(self):
+    def figure7_dwell(self):
 
         fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(figsize=(20, 10), ncols=2, nrows=2, dpi=300)
 
@@ -957,43 +955,39 @@ class Movie:
         ax1.plot(x_fit, exp_pdf(x_fit, self.dwell_pdf), 'r', lw=1)          
         ax1.set_xlabel('Time [s]')
         ax1.set_ylabel('PDF')
-        ax1.set_title('PDF, Dwell time = %.3f +/- %.3f [s] (N = %d)' %(self.dwell_pdf, self.dwell_pdf_error, len(t2)))  
+        ax1.set_title('PDF, Dwell Time = %.3f +/- %.3f [s] (N = %d)' %(self.dwell_pdf, self.dwell_pdf_error, len(t2)))  
 
         ax2.hist(t2, bins=bins, histtype='step', lw=1, color='k', density=True)
         ax2.plot(x_fit, exp_pdf(x_fit, self.dwell_pdf), 'r', lw=1)          
         ax2.set_yscale('log')
         ax2.set_xlabel('Time [s]')
         ax2.set_ylabel('PDF')
-        ax2.set_title('PDF, Dwell time = %.3f +/- %.3f [s] (N = %d)' %(self.dwell_pdf, self.dwell_pdf_error, len(t2)))
 
         # Plot icdf with LSQ 
         bins = np.arange(0, t_max, 1)
         x, n = get_icdf(t2, self.time_interval)
 
         ax3.step(x, n, where='mid', c='k', lw=1)        
-        ax3.plot(x_fit, exp_icdf(x_fit, self.dwell_icdf), 'r', lw=1)       
+        # ax3.plot(x_fit, exp_icdf(x_fit, self.dwell_icdf), 'r', lw=1)     # LSQ fitting with ICDF
+        ax3.plot(x_fit, exp_icdf(x_fit, self.dwell_pdf), 'r', lw=1)        # MLE fitting with PDF    
         ax3.set_xlabel('Time [s]')
         ax3.set_ylabel('ICDF')
-        ax3.set_title('ICDF, Dwell time = %.3f [s] (N = %d)' %(self.dwell_icdf, len(t2)))
+        ax3.set_title('ICDF, Dwell Time = %.3f +/- %.3f [s] (N = %d)' %(self.dwell_pdf, self.dwell_pdf_error, len(t2)))  
 
         ax4.step(x, n, where='mid', c='k', lw=1)        
-        ax4.plot(x_fit, exp_icdf(x_fit, self.dwell_icdf), 'r', lw=1)       
+        # ax4.plot(x_fit, exp_icdf(x_fit, self.dwell_icdf), 'r', lw=1)   # LSQ fitting with ICDF
+        ax4.plot(x_fit, exp_icdf(x_fit, self.dwell_pdf), 'r', lw=1)      # MLE fitting with PDF  
         ax4.set_yscale('log')
         ax4.set_xlabel('Time [s]')
         ax4.set_ylabel('ICDF')
-        ax4.set_title('ICDF, Dwell time = %.3f [s] (N = %d)' %(self.dwell_icdf, len(t2)))
 
-        fig.savefig(self.dir/'plot9_dwell.png')   
+        fig.savefig(self.dir/'figures'/'figure7_dwell.png')   
         plt.close('all')
 
 
-    def plot_trace_fit(self):
+    def figure_traces(self):
         # Make a new Trace folder   
         print("Plotting traces...")                                                                                                                                                                                                                                                                                      
-        trace_dir = self.dir/'Traces'
-        if os.path.exists(trace_dir): # Delete if already existing 
-            shutil.rmtree(trace_dir)
-        os.makedirs(trace_dir)
                 
         # Save each trace
         time = np.arange(self.n_frame)*self.time_interval
@@ -1016,9 +1010,9 @@ class Movie:
             ax1.set_ylabel('Intensity')
             ax1.set_xlabel('Time [s]')
             if self.is_trace_inlier[i] == True:
-                title_sp = 'Data (K), Fit: Inlier (R)' 
+                title_sp = 'Data (K), HMM Fit: Inlier (R)' 
             else:
-                title_sp = 'Data (K), Fit: Outlier (B)'
+                title_sp = 'Data (K), HMM Fit: Outlier (B)'
             ax1.set_title(title_sp)
 
             ax2.plot(time, self.trace[i]-self.trace_fit[i], 'k', lw=2)        
@@ -1028,34 +1022,32 @@ class Movie:
             ax2.set_ylim([-3*max(self.rmsd_inlier), 3*max(self.rmsd_inlier)])            
             ax2.set_ylabel('Intensity')
             ax2.set_xlabel('Time [s]')
-            ax2.set_title('Residual')
+            ax2.set_title('Deviation = Data - HMM Fit')
 
-            ax3.imshow(I_row, cmap='gray')
+            ax3.imshow(I_col, cmap='gray')
             ax3.set_xlabel('Frame')            
-            ax3.set_ylabel('Row')
-            ax3.set_title('Y = %d' %(r))
+            ax3.set_title('X = %d' %(c))
 
-            ax4.imshow(I_col, cmap='gray')
+            ax4.imshow(I_row, cmap='gray')
             ax4.set_xlabel('Frame')            
-            ax4.set_ylabel('Col')
-            ax4.set_title('X = %d' %(c))
+            ax4.set_title('Y = %d' %(r))
 
             fig.subplots_adjust(wspace=0.3, hspace=0.5)
-            print("Save Trace %d (%d %%)" % (i+1, ((i+1)/n_fig)*100))
-            fig_name = 'Trace%d.png' %(i+1)
-            fig.savefig(trace_dir/fig_name) 
+            print("Save trace%d.png (%d %%)" % (i+1, ((i+1)/n_fig)*100))
+            fig_name = 'trace%d.png' %(i+1)
+            fig.savefig(self.dir/'figures'/'traces'/fig_name) 
             fig.clf()
             plt.close('all')   
 
 
                     
 def main():
-    # Calculate the process time for each movie
+    # Calculate the time spent for each movie
     start = timer() 
 
-    # Find all the movies (*.tif) in the directory tree and save the paths in movie_paths for the analysis 
+    # Find all the movies (*.tif) under the current directory tree and save the paths in movie_paths for the analysis 
     movie_paths = [fn for fn in data_directory.glob('**/*.tif')]
-    print('%d movies are found' %(len(movie_paths)))
+    print('%d movies are found.' %(len(movie_paths)))
 
     # Analyze movies one by one 
     for i, movie_path in enumerate(movie_paths):
@@ -1077,7 +1069,7 @@ def main():
             # Pass this movie if result.txt already exists and pass_with_result == True 
             result_file = Path(movie_path.parent/'result.txt')
             if result_file.exists() and pass_with_result:
-                print('\nresult.txt already exist.\n')
+                print('\nresult.txt already exists.\n')
                 continue  
 
             # Make a movie instance
@@ -1086,7 +1078,7 @@ def main():
             # Read the movie
             movie.read_movie()
 
-            # Flatfield correction 
+            # Minimum intensity offset 
             movie.correct_offset()  
 
             # Flatfield correction 
@@ -1121,15 +1113,15 @@ def main():
 
             # Plot the result and save them in png files.     
             print("\nPlotting figures...\n")  
-            movie.plot0_clean()
-            movie.plot1_original_min_max()     
-            movie.plot2_flatfield()              
-            movie.plot3_drift()             
-            movie.plot4_peak()  
-            movie.plot5_spot()  
-            movie.plot6_spot_fit()
-            movie.plot7_dwell()
-            movie.plot_trace_fit() 
+            movie.figure_reset()
+            movie.figure1_projected_intensity()     
+            movie.figure2_flatfield()              
+            movie.figure3_drift()             
+            movie.figure4_peak()  
+            movie.figure5_spot()  
+            movie.figure6_spot_fit()
+            movie.figure7_dwell()
+            movie.figure_traces() 
 
             # Delete error.txt if existing 
             error_file = Path(movie_path.parent/'error.txt')
@@ -1151,7 +1143,7 @@ def main():
 
         # Calculate the process time for each movie
         end = timer()
-        print('\n%d seconds have passed.\n' %(end-start))
+        print('\n%d seconds passed.\n' %(end-start))
         start = end
 
 
