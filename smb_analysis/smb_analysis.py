@@ -636,18 +636,10 @@ class Movie:
         self.dwell_2 = np.array(self.dwell_2)-self.offset
         self.dwell_3 = np.array(self.dwell_3)-self.offset
 
-        self.wait_1 = np.array(self.wait_1)-self.offset
-        self.wait_2 = np.array(self.wait_2)-self.offset
-        self.wait_3 = np.array(self.wait_3)-self.offset
-
         # Exclude short frames and convert unit in sec 
         self.dwell_1 = self.dwell_1[self.dwell_1>0]*self.time_interval
         self.dwell_2 = self.dwell_2[self.dwell_2>0]*self.time_interval
         self.dwell_3 = self.dwell_3[self.dwell_3>0]*self.time_interval
-
-        self.wait_1 = self.wait_1[self.wait_1>0]*self.time_interval
-        self.wait_2 = self.wait_2[self.wait_2>0]*self.time_interval
-        self.wait_3 = self.wait_3[self.wait_3>0]*self.time_interval
 
 
     def exclude_long(self):
@@ -656,41 +648,11 @@ class Movie:
         self.dwell_2 = self.dwell_2[self.dwell_2 < np.median(self.dwell_2)*cutoff]
         self.dwell_3 = self.dwell_3[self.dwell_3 < np.median(self.dwell_3)*cutoff]
 
-        self.wait_1 = self.wait_1[self.wait_1 < np.median(self.wait_1)*cutoff]
-        self.wait_2 = self.wait_2[self.wait_2 < np.median(self.wait_2)*cutoff]
-        self.wait_3 = self.wait_3[self.wait_3 < np.median(self.wait_3)*cutoff]      
 
-   
     def estimate_time(self):
-
-        # MLE mean estimation 
-        self.Mean_dwell_1 = MLE_mean(self.window, self.dwell_1, 1)
-        self.Mean_dwell_2 = MLE_mean(self.window, self.dwell_2, 2)                
-        self.Mean_dwell_3 = MLE_mean(self.window, self.dwell_3, 3)
-        self.Mean_wait_1 = MLE_mean(self.window, self.wait_1, 1)
-        self.Mean_wait_2 = MLE_mean(self.window, self.wait_2, 2)
-        self.Mean_wait_3 = MLE_mean(self.window, self.wait_3, 3)
-
-        # MLE error estimation
-        self.Error_dwell_1 = MLE_error(self.window, self.dwell_1, 1)
-        self.Error_dwell_2 = MLE_error(self.window, self.dwell_2, 2)        
-        self.Error_dwell_3 = MLE_error(self.window, self.dwell_3, 3)
-        self.Error_wait_1 = MLE_error(self.window, self.wait_1, 1)          
-        self.Error_wait_2 = MLE_error(self.window, self.wait_2, 2)  
-        self.Error_wait_3 = MLE_error(self.window, self.wait_3, 3)  
-
-        # Weighted MLE
-        self.Mean_dwell, self.Error_dwell = get_weighted_mean(self.Mean_dwell_1, self.Error_dwell_1, 
-                                                              self.Mean_dwell_2, self.Error_dwell_2, 
-                                                              self.Mean_dwell_3, self.Error_dwell_3)
-
-        self.Mean_wait, self.Error_wait = get_weighted_mean(self.Mean_wait_1, self.Error_wait_1, 
-                                                            self.Mean_wait_2, self.Error_wait_2, 
-                                                            self.Mean_wait_3, self.Error_wait_3)
-
         # Get dwell time from icdf or pdf
         self.dwell_pdf = np.mean(self.dwell_2)
-        self.dwell_pdf_error = np.mean(self.dwell_2)/len(self.dwell_2)**0.5
+        self.dwell_pdf_error = np.std(self.dwell_2)/len(self.dwell_2)**0.5
         self.dwell_time, self.dwell_icdf = get_icdf(self.dwell_2, self.time_interval)
         self.dwell_icdf, cov = curve_fit(exp_icdf, self.dwell_time, self.dwell_icdf, p0=[np.mean(self.dwell_2)])
 
@@ -702,15 +664,12 @@ class Movie:
             f.write('directory = %s \n' %(self.dir))
             f.write('name = %s \n' %(self.name))
             f.write('time interval = %.2f [s] \n' %(self.time_interval))
-            f.write('number of frame = %d \n' %(self.n_frame))
+            f.write('number of frames = %d \n' %(self.n_frame))
             f.write('number of spots = %d \n\n' %(len(self.rmsd_inlier)))
 
-            f.write('dwell time (class 2) = %.3f +/- %.3f [s] (N = %d) \n' %(self.Mean_dwell_2, self.Error_dwell_2, len(self.dwell_2)))
+            f.write('mean dwell time = %.3f +/- %.3f [s] (N = %d) \n' %(self.dwell_pdf, self.dwell_pdf_error, len(self.dwell_2)))
 
-            f.write('dwell time (class 2, exp_pdf) = %.3f +/- %.3f [s] (N = %d) \n' %(self.dwell_pdf, self.dwell_pdf_error, len(self.dwell_2)))  
-            f.write('dwell time (class 2, exp_icdf) = %.3f [s] (N = %d) \n\n' %(self.dwell_icdf, len(self.dwell_2)))  
-
-      
+    
     def figure_reset(self):       
 
         # clean all the existing png files in the folder
