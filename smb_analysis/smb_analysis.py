@@ -58,12 +58,12 @@ def str2bool(v):
     """
     return v.lower() in ("yes", "true", "t", "1")
 
-def running_avg(x, n):
-    m = int((n-1)/2)
-    y =  np.convolve(x, np.ones((n,))/n, mode='valid') 
-    z = [np.round(i) for i in y]
-    k = np.asarray(z[:1]*m + z + z[-1:]*m, dtype=int)
-    return k
+# def running_avg(x, n):
+#     m = int((n-1)/2)
+#     y =  np.convolve(x, np.ones((n,))/n, mode='valid') 
+#     z = [np.round(i) for i in y]
+#     k = np.asarray(z[:1]*m + z + z[-1:]*m, dtype=int)
+#     return k
 
 def is_inlier(I, m=4):
     """ Check whether an array of data are inliers or outliers 
@@ -108,89 +108,14 @@ def get_icdf(t, dt):
         icdf.append(sum(i<=t)/len(t)) 
     return x*dt, icdf
 
+
 def exp_pdf(t, mt):
     return np.exp(-t/mt)/mt
 
-#def exp_icdf(t, mt, A):
-#    return A*np.exp(-t/mt)
 
 def exp_icdf(t, mt):
     return np.exp(-t/mt)
 
-def icdf(k, T, t, cl):
-    if cl == 2:
-        A = k*T-1
-        return 1 - (np.exp(-k*t)*(k*t-A)+A)/(np.exp(-k*T)+A)        
-    else:
-        return (np.exp(-k*t)-np.exp(-k*T))/(1-np.exp(-k*T))
-
-
-def pdf(k, T, t, cl):
-    if cl == 2:
-        return (k*T-k*t)/(k*T-1+np.exp(-k*T))*k*np.exp(-k*t)  
-    else:        
-        return k*np.exp(-k*t)/(1-np.exp(-k*T))
-
-
-def LL(k, T, t, cl):     
-    k = abs(k)
-    if cl == 2:
-        return np.sum(np.log(k*T-k*t)-np.log(k*T-1+np.exp(-k*T))+np.log(k)-k*t) 
-    else:        
-        return np.sum(np.log(k)-k*t-np.log(1-np.exp(-k*T)))
-
-
-def MLE_mean(T, t, cl):
-    u = 1/np.mean(t)
-    for i in range(100):
-        if cl == 2:
-            u = (u*T-2+(u*T+2)*np.exp(-u*T))/(u*T-1+np.exp(-u*T))/np.mean(t)
-        else:
-            u = (1-np.exp(-u*T)-u*T*np.exp(-u*T))/(1-np.exp(-u*T))/np.mean(t)
-    return 1/u
-
-
-def MLE_error(T, t, cl):
-    u = 1/MLE_mean(T, t, cl)
-    x = u*T
-    if cl == 2:
-        N = x-2 + (x+2)*np.exp(-x)
-        D = x-1 + np.exp(-x)
-        N1 = 1 - (x+1)*np.exp(-x)
-        D1 = 1 - np.exp(-x)
-        E_t = (x-2+(x+2)*np.exp(-x))/(x-1+np.exp(-x))/u
-        E_t2 = (2*x-6+(x**2+4*x+6)*np.exp(-x))/D/u**2
-    else:
-        N = 1 - np.exp(-x) - x*np.exp(-x)
-        D = 1 - np.exp(-x)
-        N1 = x*np.exp(-x)
-        D1 = np.exp(-x)
-        E_t = (1-np.exp(-x)-x*np.exp(-x))/(1-np.exp(-x))/u
-        E_t2 = (2-(2+2*x+x**2)*np.exp(-x))/D/u**2
-    f = N/D
-    f1 = (N1*D-N*D1)/D**2
-    dEdu = -(f-x*f1)/u**2
-    Var_t = E_t2 - E_t**2
-    Var_u = Var_t/dEdu**2/len(t)
-    SD_u = Var_u**0.5
-    SD_t = (1/(u-SD_u)-1/(u+SD_u))/2
-    return SD_t
-
-
-def get_weighted_mean(m1, s1, m2, s2, m3, s3):
-    m = np.array([m1, m2, m3])
-    s = np.array([s1, s2, s3])
-    w = np.array([1/i**2 for i in s])
-
-    # Exclude nan
-    m = m[w > 0]
-    s = s[w > 0]
-    w = w[w > 0]        
-
-    weighted_mean = sum([m[i]*w[i] for i in range(len(w))])/sum(w)
-    weighted_error = 1/sum(w)**0.5
-
-    return weighted_mean, weighted_error
 
 class Movie:
     def __init__(self, path):
@@ -259,7 +184,7 @@ class Movie:
 
     def correct_offset(self):
         """
-        Correct offset is an optional function to remove non-uniform background or long lasting dirt spots 
+        Correct offset is an optional function to remove non-uniform background or long lasting dirt spots. 
         This shouldn't be used when drift correction is required since it will remove long lasting spots 
         which provides the drift information. 
         """
@@ -349,11 +274,8 @@ class Movie:
     def correct_drift(self):
         """
 
-
-
         """
-
-
+        
         self.I_drift = self.I_flatfield.copy()
         self.drift_row = np.zeros(len(self.I_drift), dtype='int')
         self.drift_col = np.zeros(len(self.I_drift), dtype='int')
@@ -412,9 +334,9 @@ class Movie:
         self.I_max = np.max(self.I, axis=0)
 
 
-    # Find spots where molecules bind
+    # Find peaks where molecules bind
     def find_peak(self):
-        # Find local maxima from I_max
+        # Smoothening using gaussian filter
         self.I_max_smooth = gaussian_filter(self.I_max, sigma=0.1)
 
         # Find local maxima from I_max
@@ -423,7 +345,7 @@ class Movie:
         self.peak_row = self.peak[::-1,0]
         self.peak_col = self.peak[::-1,1]
 
-        # Get the time trace of each spots
+        # Get the time trace of each peak
         self.peak_trace = np.zeros((self.n_peak, self.n_frame))
         for i in range(self.n_peak):
             # Get the trace from each spot
@@ -472,7 +394,6 @@ class Movie:
             for i, I_max in enumerate(self.peak_max):
                 if abs(I_max - inliers_mean)/inliers_std > 2:
                     self.is_peak_max_inlier[i] = False
-
 
         # Find lnliers from both I_min and I_max
         self.is_peak_inlier = self.is_peak_min_inlier & self.is_peak_max_inlier
@@ -626,35 +547,33 @@ class Movie:
                     self.wait_2.extend(dt_odd)
                     self.dwell_2.extend(dt_even)                
 
+        self.dwell = self.dwell_2
+
 
     def  exclude_short(self):
 
         # Offset to get rid of short events 
         self.offset = self.frame_offset + 0.5
-
-        self.dwell_1 = np.array(self.dwell_1)-self.offset
-        self.dwell_2 = np.array(self.dwell_2)-self.offset
-        self.dwell_3 = np.array(self.dwell_3)-self.offset
+        self.dwell = np.array(self.dwell)-self.offset
 
         # Exclude short frames and convert unit in sec 
-        self.dwell_1 = self.dwell_1[self.dwell_1>0]*self.time_interval
-        self.dwell_2 = self.dwell_2[self.dwell_2>0]*self.time_interval
-        self.dwell_3 = self.dwell_3[self.dwell_3>0]*self.time_interval
+        self.dwell = self.dwell[self.dwell>0]*self.time_interval
 
 
     def exclude_long(self):
         cutoff = 10
-        self.dwell_1 = self.dwell_1[self.dwell_1 < np.median(self.dwell_1)*cutoff]
-        self.dwell_2 = self.dwell_2[self.dwell_2 < np.median(self.dwell_2)*cutoff]
-        self.dwell_3 = self.dwell_3[self.dwell_3 < np.median(self.dwell_3)*cutoff]
+        self.dwell = self.dwell[self.dwell < np.median(self.dwell)*cutoff]
 
 
     def estimate_time(self):
-        # Get dwell time from icdf or pdf
-        self.dwell_pdf = np.mean(self.dwell_2)
-        self.dwell_pdf_error = np.std(self.dwell_2)/len(self.dwell_2)**0.5
-        self.dwell_time, self.dwell_icdf = get_icdf(self.dwell_2, self.time_interval)
-        self.dwell_icdf, cov = curve_fit(exp_icdf, self.dwell_time, self.dwell_icdf, p0=[np.mean(self.dwell_2)])
+        """ Estimation of the dwell time 
+        Our model of the dwell time distribution is an exponential probability density function: 
+        pdf(t) = k * exp(-k*t), where k is unbinding rate, and t is time. 
+        We use maximum likelihood estimation (mle) to estimate the rate k. 
+        In the case of an exponential pdf, mle for k is 1/sample_mean. 
+        """
+        self.dwell_pdf = np.mean(self.dwell)
+        self.dwell_pdf_error = np.std(self.dwell)/len(self.dwell)**0.5
 
 
     def save_result(self):
@@ -666,7 +585,6 @@ class Movie:
             f.write('time interval = %.2f [s] \n' %(self.time_interval))
             f.write('number of frames = %d \n' %(self.n_frame))
             f.write('number of spots = %d \n\n' %(len(self.rmsd_inlier)))
-
             f.write('mean dwell time = %.3f +/- %.3f [s] (N = %d) \n' %(self.dwell_pdf, self.dwell_pdf_error, len(self.dwell_2)))
 
     
@@ -680,7 +598,6 @@ class Movie:
 
         if os.path.exists(self.dir/'Traces'): # Delete if already existing 
             shutil.rmtree(self.dir/'Traces')
-
 
         # make folders to save figures                                                                                                                                                                                                                                                                         
         path = self.dir/'figures'
