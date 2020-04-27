@@ -31,7 +31,7 @@ These steps will install smb-analysis and its dependencies in a conda environmen
 `(smb) $ cd smb-analysis`   
 
 8. Install the setup.py that will install smb-analysis and its dependencies.  
-`(smb) $ python setup.py install`
+`(smb) $ python setup.py develop`
 
 
 ## Instruction
