@@ -548,7 +548,7 @@ class Movie:
                     self.wait_2.extend(dt_odd)
                     self.dwell_2.extend(dt_even)                
 
-        self.dwell = self.dwell_2
+        self.dwell = self.dwell_2.copy()
 
 
     def  exclude_short(self):
@@ -586,7 +586,7 @@ class Movie:
             f.write('time interval = %.2f [s] \n' %(self.time_interval))
             f.write('number of frames = %d \n' %(self.n_frame))
             f.write('number of spots = %d \n\n' %(len(self.rmsd_inlier)))
-            f.write('mean dwell time = %.3f +/- %.3f [s] (N = %d) \n' %(self.dwell_pdf, self.dwell_pdf_error, len(self.dwell_2)))
+            f.write('mean dwell time = %.3f +/- %.3f [s] (N = %d) \n' %(self.dwell_pdf, self.dwell_pdf_error, len(self.dwell)))
 
     
     def figure_reset(self):       
@@ -811,10 +811,8 @@ class Movie:
 
         fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(figsize=(20, 10), ncols=2, nrows=2, dpi=300)
 
-        t1 = np.array(self.dwell_1)
-        t2 = np.array(self.dwell_2)
-        t3 = np.array(self.dwell_3)
-        t_max = max(t2.tolist())
+        t = np.array(self.dwell)
+        t_max = max(t.tolist())
 
         x_fit = np.linspace(0, t_max, 100)
 
@@ -828,13 +826,13 @@ class Movie:
             interval = self.time_interval
             bins = np.arange(0, t_max+interval, interval) 
 
-        ax1.hist(t2, bins=bins, histtype='step', lw=1, color='k', density=True)
+        ax1.hist(t, bins=bins, histtype='step', lw=1, color='k', density=True)
         ax1.plot(x_fit, exp_pdf(x_fit, self.dwell_pdf), 'r', lw=1)          
         ax1.set_xlabel('Time [s]')
         ax1.set_ylabel('PDF')
-        ax1.set_title('PDF, Dwell Time = %.3f +/- %.3f [s] (N = %d)' %(self.dwell_pdf, self.dwell_pdf_error, len(t2)))  
+        ax1.set_title('PDF, Dwell Time = %.3f +/- %.3f [s] (N = %d)' %(self.dwell_pdf, self.dwell_pdf_error, len(t)))  
 
-        ax2.hist(t2, bins=bins, histtype='step', lw=1, color='k', density=True)
+        ax2.hist(t, bins=bins, histtype='step', lw=1, color='k', density=True)
         ax2.plot(x_fit, exp_pdf(x_fit, self.dwell_pdf), 'r', lw=1)          
         ax2.set_yscale('log')
         ax2.set_xlabel('Time [s]')
@@ -842,14 +840,14 @@ class Movie:
 
         # Plot icdf with LSQ 
         bins = np.arange(0, t_max, 1)
-        x, n = get_icdf(t2, self.time_interval)
+        x, n = get_icdf(t, self.time_interval)
 
         ax3.step(x, n, where='mid', c='k', lw=1)        
         # ax3.plot(x_fit, exp_icdf(x_fit, self.dwell_icdf), 'r', lw=1)     # LSQ fitting with ICDF
         ax3.plot(x_fit, exp_icdf(x_fit, self.dwell_pdf), 'r', lw=1)        # MLE fitting with PDF    
         ax3.set_xlabel('Time [s]')
         ax3.set_ylabel('ICDF')
-        ax3.set_title('ICDF, Dwell Time = %.3f +/- %.3f [s] (N = %d)' %(self.dwell_pdf, self.dwell_pdf_error, len(t2)))  
+        ax3.set_title('ICDF, Dwell Time = %.3f +/- %.3f [s] (N = %d)' %(self.dwell_pdf, self.dwell_pdf_error, len(t)))  
 
         ax4.step(x, n, where='mid', c='k', lw=1)        
         # ax4.plot(x_fit, exp_icdf(x_fit, self.dwell_icdf), 'r', lw=1)   # LSQ fitting with ICDF
