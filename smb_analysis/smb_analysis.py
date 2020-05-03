@@ -59,12 +59,12 @@ def str2bool(v):
     """
     return v.lower() in ("yes", "true", "t", "1")
 
-# def running_avg(x, n):
-#     m = int((n-1)/2)
-#     y =  np.convolve(x, np.ones((n,))/n, mode='valid') 
-#     z = [np.round(i) for i in y]
-#     k = np.asarray(z[:1]*m + z + z[-1:]*m, dtype=int)
-#     return k
+def running_avg(x, n):
+    m = int((n-1)/2)
+    y =  np.convolve(x, np.ones((n,))/n, mode='valid') 
+    z = [np.round(i) for i in y]
+    k = np.asarray(z[:1]*m + z + z[-1:]*m, dtype=int)
+    return k
 
 def is_inlier(I, m=4):
     """ Check whether an array of data are inliers or outliers 

@@ -2,4 +2,5 @@ build/
 dist/
 smb_analysis.egg-info/
 data/
-*.pyc
+*/*.pyc
+smb_analysis/__pycache__
