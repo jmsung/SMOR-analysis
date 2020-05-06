@@ -749,7 +749,7 @@ class Movie:
         ax2.hist(self.peak_min[self.is_peak_min_inlier], bins = bins, histtype='step', lw=2, color='r')   
         ax2.set_xlabel('Intensity')
         ax2.set_ylabel('Counts')     
-        ax2.set_title('Minimum intensity (cutoff=%.1f SD)' %(float(self.info['intensity_min_cutoff'])))
+        ax2.set_title('Minimum Intensity (cutoff=%.1f SD)' %(float(self.info['intensity_min_cutoff'])))
 
 
 
@@ -760,7 +760,7 @@ class Movie:
 #        ax3.plot(self.I_max_x, self.I_max_fit, 'k')
         ax3.set_xlabel('Intensity')
         ax3.set_ylabel('Counts')    
-        ax3.set_title('Maximum intensity (cutoff=%.1f SD)' %(float(self.info['intensity_max_cutoff'])))
+        ax3.set_title('Maximum Intensity (cutoff=%.1f SD)' %(float(self.info['intensity_max_cutoff'])))
 
         fig.savefig(self.dir/'figures'/'figure5_spot.png')   
         plt.close('all')
@@ -836,7 +836,7 @@ class Movie:
         ax2.plot(x_fit, exp_pdf(x_fit, self.dwell_pdf), 'r', lw=1)          
         ax2.set_yscale('log')
         ax2.set_xlabel('Time [s]')
-        ax2.set_ylabel('PDF')
+        ax2.set_ylabel('Probability Density')
 
         # Plot icdf with LSQ 
         bins = np.arange(0, t_max, 1)
@@ -846,7 +846,7 @@ class Movie:
         # ax3.plot(x_fit, exp_icdf(x_fit, self.dwell_icdf), 'r', lw=1)     # LSQ fitting with ICDF
         ax3.plot(x_fit, exp_icdf(x_fit, self.dwell_pdf), 'r', lw=1)        # MLE fitting with PDF    
         ax3.set_xlabel('Time [s]')
-        ax3.set_ylabel('ICDF')
+        ax3.set_ylabel('Inverse Cumulative Density')
         ax3.set_title('ICDF, Dwell Time = %.3f +/- %.3f [s] (N = %d)' %(self.dwell_pdf, self.dwell_pdf_error, len(t)))  
 
         ax4.step(x, n, where='mid', c='k', lw=1)        
@@ -854,7 +854,7 @@ class Movie:
         ax4.plot(x_fit, exp_icdf(x_fit, self.dwell_pdf), 'r', lw=1)      # MLE fitting with PDF  
         ax4.set_yscale('log')
         ax4.set_xlabel('Time [s]')
-        ax4.set_ylabel('ICDF')
+        ax4.set_ylabel('Ineverse Cumulative Density')
 
         fig.savefig(self.dir/'figures'/'figure7_dwell.png')   
         plt.close('all')
