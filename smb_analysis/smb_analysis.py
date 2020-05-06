@@ -829,7 +829,7 @@ class Movie:
         ax1.hist(t, bins=bins, histtype='step', lw=1, color='k', density=True)
         ax1.plot(x_fit, exp_pdf(x_fit, self.dwell_pdf), 'r', lw=1)          
         ax1.set_xlabel('Time [s]')
-        ax1.set_ylabel('PDF')
+        ax1.set_ylabel('Probability Density')
         ax1.set_title('PDF, Dwell Time = %.3f +/- %.3f [s] (N = %d)' %(self.dwell_pdf, self.dwell_pdf_error, len(t)))  
 
         ax2.hist(t, bins=bins, histtype='step', lw=1, color='k', density=True)
