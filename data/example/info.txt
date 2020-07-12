@@ -9,6 +9,7 @@ HMM_unbound_cutoff = 3
 HMM_bound_cutoff = 3
 save_trace = 20
 frame_offset = 1
-two_group = False
+num_group = 1
+select_group = 1
 
 
