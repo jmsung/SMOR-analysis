@@ -151,7 +151,8 @@ class Movie:
         self.HMM_unbound_cutoff = float(self.info['HMM_unbound_cutoff']) 
         self.HMM_bound_cutoff = float(self.info['HMM_bound_cutoff'])             
         self.save_trace = int(self.info['save_trace'])
-        self.two_group = str2bool(self.info['two_group'])
+        self.num_group = int(self.info['num_group'])
+        self.select_group = int(self.info['select_group'])
 
         # Read movie.tif
         with TiffFile(self.path) as tif:
@@ -360,41 +361,21 @@ class Movie:
     def find_spot(self):
         # Find inliers with I_min
         self.peak_min = np.min(self.peak_trace, axis=1)
-        self.is_peak_min_inlier = is_inlier(self.peak_min, float(self.info['intensity_min_cutoff'])) 
+        self.is_peak_min_inlier = is_inlier(self.peak_min, self.intensity_min_cutoff) 
 
         # Find inliers with I_max
         self.peak_max = np.max(self.peak_trace, axis=1)
 
-        if self.two_group == False:
-            print('two_group = False')
-            self.is_peak_max_inlier = is_inlier(self.peak_max, float(self.info['intensity_max_cutoff'])) 
-        else:
-            print('two_group = True')
-            # Train and predict data with GaussianMixture model 
-            X = self.peak_max.reshape(-1,1)
-            gmm = GaussianMixture(n_components=2).fit(X)
-            labels = gmm.predict(X)
-            
-            # Compare two groups
-            g0_n = len(self.peak_max[labels==0])
-            g1_n = len(self.peak_max[labels==1])
-            g0_m = np.median(self.peak_max[labels==0])
-            g1_m = np.median(self.peak_max[labels==1])        
-            g0_s = np.std(self.peak_max[labels==0])
-            g1_s = np.std(self.peak_max[labels==1])
+        # Train and predict data with GaussianMixture model 
+        X = self.peak_max.reshape(-1,1)
+        gmm = GaussianMixture(n_components=self.num_group).fit(X)
+        labels = gmm.predict(X)        
+        peak_max_select = self.peak_max[labels==self.select_group-1]
 
-            # Group in higher intensity is inliers.
-            if self.peak_max[labels==0].mean() > self.peak_max[labels==1].mean():
-                self.is_peak_max_inlier = labels==0
-            else:               
-                self.is_peak_max_inlier = labels==1
-
-            # Exclude outliers
-            inliers_std = np.std(self.peak_max[self.is_peak_max_inlier])
-            inliers_mean = np.mean(self.peak_max[self.is_peak_max_inlier])
-            for i, I_max in enumerate(self.peak_max):
-                if abs(I_max - inliers_mean)/inliers_std > 2:
-                    self.is_peak_max_inlier[i] = False
+        self.is_peak_max_inlier = np.zeros(len(self.peak_max), dtype=bool)
+        for i, peak_max_intensity in enumerate(self.peak_max):
+            if abs(peak_max_intensity - np.median(peak_max_select))/np.std(peak_max_select) < self.intensity_max_cutoff:
+                self.is_peak_max_inlier[i] = True
 
         # Find lnliers from both I_min and I_max
         self.is_peak_inlier = self.is_peak_min_inlier & self.is_peak_max_inlier
