@@ -1,15 +1,26 @@
-time_interval = 5
+time_interval = 1
 spot_size = 3
 drift_correct = False
 flatfield_correct = True
-intensity_min_cutoff = 3
-intensity_max_cutoff = 3
-HMM_RMSD_cutoff = 2
-HMM_unbound_cutoff = 3
-HMM_bound_cutoff = 3
-save_trace = 2
 frame_offset = 1
-num_group = 1
-select_group = 1
+save_trace_num = 2
+
+intensity_min_cutoff = 2
+
+intensity_max_cutoff = 2
+intensity_max_num = 1
+intensity_max_index = 1
+
+HMM_RMSD_cutoff = 2
+
+HMM_unbound_cutoff = 2
+HMM_unbound_num = 1
+HMM_unbound_index = 1
+
+HMM_bound_cutoff = 2
+HMM_bound_num = 1
+HMM_bound_index = 1
+
+
 
 

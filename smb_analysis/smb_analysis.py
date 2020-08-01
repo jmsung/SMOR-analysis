@@ -81,6 +81,29 @@ def is_inlier(I, m=4):
     return s < m                    # True if noise is below threshold
 
 
+def find_inlier_multi_groups(data, num, index, cutoff):
+
+    # Train and predict data with GaussianMixture model 
+    X = data.reshape(-1,1)
+    gmm = GaussianMixture(n_components=num).fit(X)
+    labels = gmm.predict(X)      
+
+    # Reorder labels in the order intensity
+    labels_mean = [np.mean(data[labels==label]) for label in range(num)]
+    labels_sorted = np.argsort(labels_mean)
+    labels = np.array([labels_sorted[label] for label in labels])
+
+    # Select the group of interest among the peaks
+    data_select = data[labels==index-1]
+
+    is_inlier = np.zeros(len(data), dtype=bool)
+    for i, datum in enumerate(data):
+        if abs(datum - np.median(data_select))/np.std(data_select) < cutoff:
+            is_inlier[i] = True
+
+    return is_inlier
+
+
 def gaussian(x, m, s, n):
     return n/(2*np.pi*s**2)**0.5*np.exp(-(x-m)**2/(2*s**2))
 
@@ -141,18 +164,22 @@ class Movie:
 
         # Parameters for analysis 
         self.time_interval = float(self.info['time_interval'])
-        self.spot_size = int(self.info['spot_size'])     
+        self.spot_size = int(self.info['spot_size'])
         self.drift_correct = str2bool(self.info['drift_correct'])
-        self.flatfield_correct = str2bool(self.info['flatfield_correct'])   
-        self.frame_offset = int(self.info['frame_offset'])      
-        self.intensity_min_cutoff = float(self.info['intensity_min_cutoff']) 
-        self.intensity_max_cutoff = float(self.info['intensity_max_cutoff']) 
+        self.flatfield_correct = str2bool(self.info['flatfield_correct'])
+        self.frame_offset = int(self.info['frame_offset'])
+        self.save_trace_num = int(self.info['save_trace_num'])
+        self.intensity_min_cutoff = float(self.info['intensity_min_cutoff'])
+        self.intensity_max_cutoff = float(self.info['intensity_max_cutoff'])
+        self.intensity_max_num = int(self.info['intensity_max_num'])
+        self.intensity_max_index = int(self.info['intensity_max_index'])
         self.HMM_RMSD_cutoff = float(self.info['HMM_RMSD_cutoff']) 
         self.HMM_unbound_cutoff = float(self.info['HMM_unbound_cutoff']) 
-        self.HMM_bound_cutoff = float(self.info['HMM_bound_cutoff'])             
-        self.save_trace = int(self.info['save_trace'])
-        self.num_group = int(self.info['num_group'])
-        self.select_group = int(self.info['select_group'])
+        self.HMM_unbound_num = int(self.info['HMM_unbound_num'])
+        self.HMM_unbound_index = int(self.info['HMM_unbound_index'])
+        self.HMM_bound_cutoff = float(self.info['HMM_bound_cutoff']) 
+        self.HMM_bound_num = int(self.info['HMM_bound_num'])  
+        self.HMM_bound_index = int(self.info['HMM_bound_index'])
 
         # Read movie.tif
         with TiffFile(self.path) as tif:
@@ -365,17 +392,8 @@ class Movie:
 
         # Find inliers with I_max
         self.peak_max = np.max(self.peak_trace, axis=1)
-
-        # Train and predict data with GaussianMixture model 
-        X = self.peak_max.reshape(-1,1)
-        gmm = GaussianMixture(n_components=self.num_group).fit(X)
-        labels = gmm.predict(X)        
-        peak_max_select = self.peak_max[labels==self.select_group-1]
-
-        self.is_peak_max_inlier = np.zeros(len(self.peak_max), dtype=bool)
-        for i, peak_max_intensity in enumerate(self.peak_max):
-            if abs(peak_max_intensity - np.median(peak_max_select))/np.std(peak_max_select) < self.intensity_max_cutoff:
-                self.is_peak_max_inlier[i] = True
+        self.is_peak_max_inlier = find_inlier_multi_groups(self.peak_max, self.intensity_max_num, 
+                                                           self.intensity_max_index, self.intensity_max_cutoff)
 
         # Find lnliers from both I_min and I_max
         self.is_peak_inlier = self.is_peak_min_inlier & self.is_peak_max_inlier
@@ -456,8 +474,10 @@ class Movie:
 
         # Find inliners and exclude outliers
         self.is_rmsd_inlier = is_inlier(self.rmsd, float(self.info['HMM_RMSD_cutoff']))
-        self.is_I_u_inlier = is_inlier(self.I_u, float(self.info['HMM_unbound_cutoff']))
-        self.is_I_b_inlier = is_inlier(self.I_b, float(self.info['HMM_bound_cutoff']))
+        self.is_I_u_inlier = find_inlier_multi_groups(self.I_u, self.HMM_unbound_num, 
+                                                      self.HMM_unbound_index, self.HMM_unbound_cutoff)
+        self.is_I_b_inlier = find_inlier_multi_groups(self.I_b, self.HMM_bound_num, 
+                                                      self.HMM_bound_index, self.HMM_bound_cutoff)
         self.is_trace_inlier = self.is_rmsd_inlier & self.is_I_u_inlier & self.is_I_b_inlier
 
         # Save inlier traces
@@ -532,7 +552,7 @@ class Movie:
         self.dwell = self.dwell_2.copy()
 
 
-    def  exclude_short(self):
+    def exclude_short(self):
 
         # Offset to get rid of short events 
         self.offset = self.frame_offset + 0.5
@@ -732,8 +752,6 @@ class Movie:
         ax2.set_ylabel('Counts')     
         ax2.set_title('Minimum intensity (cutoff=%.1f SD)' %(float(self.info['intensity_min_cutoff'])))
 
-
-
         bins = np.linspace(min(self.peak_max), max(self.peak_max), 50)     
         ax3 = fig.add_subplot(gs[1, 1])
         ax3.hist(self.peak_max, bins = bins, histtype='step', lw=2, color='b')
@@ -847,7 +865,7 @@ class Movie:
                 
         # Save each trace
         time = np.arange(self.n_frame)*self.time_interval
-        n_fig = min(self.save_trace, len(self.trace))        
+        n_fig = min(self.save_trace_num, len(self.trace))        
         for i in range(n_fig):    
             r = self.spot_row[i]
             c = self.spot_col[i]
