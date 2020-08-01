@@ -66,7 +66,7 @@ def running_avg(x, n):
     k = np.asarray(z[:1]*m + z + z[-1:]*m, dtype=int)
     return k
 
-def is_inlier(I, m=4):
+def is_inlier(I, m=3):
     """ Check whether an array of data are inliers or outliers 
     Args:
         I: Intensity signal
@@ -169,17 +169,17 @@ class Movie:
         self.flatfield_correct = str2bool(self.info['flatfield_correct'])
         self.frame_offset = int(self.info['frame_offset'])
         self.save_trace_num = int(self.info['save_trace_num'])
+        self.intensity_min_num = int(self.info['intensity_min_num'])
+        self.intensity_min_index = int(self.info['intensity_min_index'])  
         self.intensity_min_cutoff = float(self.info['intensity_min_cutoff'])
-        self.intensity_max_cutoff = float(self.info['intensity_max_cutoff'])
         self.intensity_max_num = int(self.info['intensity_max_num'])
-        self.intensity_max_index = int(self.info['intensity_max_index'])
+        self.intensity_max_index = int(self.info['intensity_max_index'])        
+        self.intensity_max_cutoff = float(self.info['intensity_max_cutoff'])
         self.HMM_RMSD_cutoff = float(self.info['HMM_RMSD_cutoff']) 
         self.HMM_unbound_cutoff = float(self.info['HMM_unbound_cutoff']) 
-        self.HMM_unbound_num = int(self.info['HMM_unbound_num'])
-        self.HMM_unbound_index = int(self.info['HMM_unbound_index'])
-        self.HMM_bound_cutoff = float(self.info['HMM_bound_cutoff']) 
         self.HMM_bound_num = int(self.info['HMM_bound_num'])  
-        self.HMM_bound_index = int(self.info['HMM_bound_index'])
+        self.HMM_bound_index = int(self.info['HMM_bound_index'])        
+        self.HMM_bound_cutoff = float(self.info['HMM_bound_cutoff']) 
 
         # Read movie.tif
         with TiffFile(self.path) as tif:
@@ -388,7 +388,8 @@ class Movie:
     def find_spot(self):
         # Find inliers with I_min
         self.peak_min = np.min(self.peak_trace, axis=1)
-        self.is_peak_min_inlier = is_inlier(self.peak_min, self.intensity_min_cutoff) 
+        self.is_peak_min_inlier = find_inlier_multi_groups(self.peak_min, self.intensity_min_num, 
+                                                           self.intensity_min_index, self.intensity_min_cutoff)
 
         # Find inliers with I_max
         self.peak_max = np.max(self.peak_trace, axis=1)
@@ -473,9 +474,8 @@ class Movie:
             self.I_b[i] = remodel.means_[1]
 
         # Find inliners and exclude outliers
-        self.is_rmsd_inlier = is_inlier(self.rmsd, float(self.info['HMM_RMSD_cutoff']))
-        self.is_I_u_inlier = find_inlier_multi_groups(self.I_u, self.HMM_unbound_num, 
-                                                      self.HMM_unbound_index, self.HMM_unbound_cutoff)
+        self.is_rmsd_inlier = is_inlier(self.rmsd, self.HMM_RMSD_cutoff)
+        self.is_I_u_inlier = is_inlier(self.I_u, self.HMM_unbound_cutoff)
         self.is_I_b_inlier = find_inlier_multi_groups(self.I_b, self.HMM_bound_num, 
                                                       self.HMM_bound_index, self.HMM_bound_cutoff)
         self.is_trace_inlier = self.is_rmsd_inlier & self.is_I_u_inlier & self.is_I_b_inlier

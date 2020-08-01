@@ -5,21 +5,21 @@ flatfield_correct = True
 frame_offset = 1
 save_trace_num = 2
 
+intensity_min_num = 1
+intensity_min_index = 1
 intensity_min_cutoff = 2
 
-intensity_max_cutoff = 2
 intensity_max_num = 1
 intensity_max_index = 1
+intensity_max_cutoff = 2
 
 HMM_RMSD_cutoff = 2
-
 HMM_unbound_cutoff = 2
-HMM_unbound_num = 1
-HMM_unbound_index = 1
 
-HMM_bound_cutoff = 2
 HMM_bound_num = 1
 HMM_bound_index = 1
+HMM_bound_cutoff = 2
+
 
 
 
