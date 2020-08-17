@@ -98,6 +98,8 @@ def find_inlier_multi_groups(data, num, index, cutoff):
 
     is_inlier = np.zeros(len(data), dtype=bool)
     for i, datum in enumerate(data):
+        if labels[i] != index-1:
+            continue
         if abs(datum - np.median(data_select))/np.std(data_select) < cutoff:
             is_inlier[i] = True
 
