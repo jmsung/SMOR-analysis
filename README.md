@@ -16,7 +16,7 @@ These steps will install smor-analysis and its dependencies in a conda environme
 `$ conda activate`
 
 3. Create a new conda environment (smor) and install Python 3.7.  
-`(base) $ conda create --name smor python=3.7`    
+`(base) $ conda create --name smor python=3.8`    
 
 4. Activate the new environment (smor).  
 `(base) $ conda activate smor`

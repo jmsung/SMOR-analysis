@@ -13,7 +13,7 @@ setup(
         'numpy == 1.17',
         'matplotlib == 3.1',
         'pathlib == 1.0',
-        'scipy == 1.3',
+        'scipy == 1.5',
         'tifffile == 0.15',
         'imreg_dft == 2.0',
         'scikit-image == 0.15',
