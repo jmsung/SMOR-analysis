@@ -10,8 +10,6 @@ moves in space over time. One exception is the global sample drift that needs to
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-# new branch for delete_class_wait
-
 from __future__ import division, print_function, absolute_import
 import traceback
 import numpy as np
