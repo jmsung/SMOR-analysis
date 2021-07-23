@@ -28,7 +28,7 @@ These steps will install smor-analysis and its dependencies in a conda environme
 `(smor) $ git clone git@github.com:jmsung/smor-analysis.git`
 
 7. Move to the folder.  
-`(smor) $ cd smor_analysis`   
+`(smor) $ cd smor-analysis`   
 
 8. Install the setup.py that will install smor-analysis and its dependencies.  
 `(smor) $ python setup.py develop`
