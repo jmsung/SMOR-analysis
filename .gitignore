@@ -1,6 +1,6 @@
 build/
 dist/
-smb_analysis.egg-info/
+smor_analysis.egg-info/
 data/
 */*.pyc
-smb_analysis/__pycache__
+smor_analysis/__pycache__
